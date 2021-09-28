@@ -17,24 +17,101 @@ library(spData)
 library(spDataLarge)
 library(tidyverse)
 library(tmap)
+
+#GwR Ch.8 demo
+library(raster)
+library(dplyr)
+library(leaflet)
 ```
 
-## R Markdown
-
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
-
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
-
-```{r cars}
-summary(cars)
+8.2.1 tmap basics 
+```{r}
+# Add fill layer to nz shape
+tm_shape(nz) +
+  tm_fill() 
+# Add border layer to nz shape
+tm_shape(nz) +
+  tm_borders() 
+# Add fill and border layers to nz shape
+tm_shape(nz) +
+  tm_fill() +
+  tm_borders() 
 ```
 
-## Including Plots
-
-You can also embed plots, for example:
-
-```{r pressure, echo=FALSE}
-plot(pressure)
+8.2.2 map objects 
+```{r}
+map_nz <- tm_shape(nz) + tm_polygons()
+class(map_nz)
 ```
 
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+add a new shape using `tm_shape()`
+```{r}
+map_nz1 = map_nz +
+  tm_shape(nz_elev) + tm_raster(alpha = 0.7)
+map_nz1
+```
+add NZ territorial waters to the existing map object 
+```{r}
+nz_water = st_union(nz) %>% st_buffer(22200) %>% 
+  st_cast(to = "LINESTRING")
+map_nz2 = map_nz1 +
+  tm_shape(nz_water) + tm_lines()
+nz_water
+map_nz2
+```
+
+Add NZ high points 
+```{r}
+map_nz3 = map_nz2 +
+  tm_shape(nz_height) + tm_dots()
+map_nz3
+```
+arrange multiple map objects into a single metaplot 
+```{r}
+tmap_arrange(map_nz1, map_nz2, map_nz3)
+```
+
+8.2.3 aesthetics 
+```{r}
+ma1 = tm_shape(nz) + tm_fill(col = "red")
+ma2 = tm_shape(nz) + tm_fill(col = "red", alpha = 0.3)
+ma3 = tm_shape(nz) + tm_borders(col = "blue")
+ma4 = tm_shape(nz) + tm_borders(lwd = 3)
+ma5 = tm_shape(nz) + tm_borders(lty = 2)
+ma6 = tm_shape(nz) + tm_fill(col = "red", alpha = 0.3) +
+  tm_borders(col = "blue", lwd = 3, lty = 2)
+tmap_arrange(ma1, ma2, ma3, ma4, ma5, ma6)
+```
+
+```{r}
+plot(st_geometry(nz), col = nz$Land_area) #base R functions accept nz$Land_area (a numeric vector)
+tm_shape(nz) + tm_fill(col = "Land_area") #tmap aesthetic arguments want a character string 
+```
+
+set legend title 
+```{r}
+legend_title = expression("Area (km"^2*")")
+map_nza = tm_shape(nz) +
+  tm_fill(col = "Land_area", title = legend_title) + tm_borders()
+map_nza
+```
+
+8.2.4 color settings
+- `breaks` allows you to manually set the breaks
+- `n` sets the number of bins into which numeric variables are categorized
+- `palette` defines the color scheme, for example BuGn
+```{r}
+tm_shape(nz) + tm_polygons(col = "Median_income")
+breaks = c(0, 3, 4, 5) * 10000
+tm_shape(nz) + tm_polygons(col = "Median_income", breaks = breaks)
+tm_shape(nz) + tm_polygons(col = "Median_income", n = 10)
+tm_shape(nz) + tm_polygons(col = "Median_income", palette = "BuGn")
+```
+
+Breaks styles 
+- style = "pretty", the default setting, rounds breaks into whole numbers where possible and spaces them evenly;
+- style = "equal" divides input values into bins of equal range and is appropriate for variables with a uniform distribution (not recommended for variables with a skewed distribution as the resulting map may end-up having little color diversity);
+- style = "quantile" ensures the same number of observations fall into each category (with the potential downside that bin ranges can vary widely);
+- style = "jenks" identifies groups of similar values in the data and maximizes the differences between categories;
+- style = "cont" (and "order") present a large number of colors over continuous color fields and are particularly suited for continuous rasters ("order" can help visualize skewed distributions);
+- style = "cat" was designed to represent categorical values and assures that each category receives a unique color.
