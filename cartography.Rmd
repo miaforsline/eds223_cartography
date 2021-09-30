@@ -71,7 +71,8 @@ tm_shape(world_asia) +
   tm_borders() + 
   tm_compass(type = "8star", position = c("left", "top")) + 
   tm_scale_bar(breaks = c(0, 1000, 2000), text.size = 1, position = c("center", "bottom")) + 
-  tm_layout(scale = 0.6) #zoom in and out 
+  tm_layout(scale = 0.6, #zoom in and out 
+            frame.lwd = 5) + 
 
 tm_shape(china) +
   tm_fill(col = "red", alpha = 0.3) +
