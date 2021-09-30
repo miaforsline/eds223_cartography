@@ -29,7 +29,6 @@ world_asia <- world[world[["continent"]] == "Asia", ]
 china <- world[world[["name_long"]] == "China", ]
 ```
 
-
 # Exploratory plots using base `plot` 
 ```{r}
 plot(world_asia, max.plot = 10) #multi-plot of all attributes
@@ -59,25 +58,58 @@ plot(world_asia["gdpPercap"], graticule = TRUE, key.pos = NULL, axes = TRUE)
 
 # `tmap` 
 ```{r}
-
-china
-
-tm_shape(world) +
-  tm_fill() +
-  tm_borders()
-
-tm_shape(world_asia) +
-  tm_fill(col = "gdpPercap", palette = "Reds", style = "quantile") +
+#world map with Asia GDP per capita colored red 
+tm_shape(world)+
+  tm_fill() + 
   tm_borders() + 
-  tm_compass(type = "8star", position = c("left", "top")) + 
+tm_shape(world_asia) +
+  tm_fill(col = "gdpPercap", 
+          palette = "Reds", 
+          style = "quantile",
+          colorNA = "gray",
+          legend.show = FALSE) +
+  tm_borders() + 
+  tmap_options(bg.color = "lightblue1")
+```
+
+# Create a new bounding
+```{r}
+bbox_new <- st_bbox(world_asia) # current bounding box
+xrange <- bbox_new$xmax - bbox_new$xmin # range of x values
+yrange <- bbox_new$ymax - bbox_new$ymin # range of y values
+bbox_new <- bbox_new %>%  # take the bounding box ...
+  st_as_sfc()
+
+#Asia map 
+tm_shape(world, bbox = bbox_new)+
+  tm_fill(col = "white") + 
+  tm_borders(lwd = 0.1) + 
+tm_shape(world_asia) +
+  tm_fill(col = "gdpPercap", 
+          palette = "Reds", 
+          style = "quantile",
+          title = "GDP Per Capita",
+          textNA = "Missing Data",
+          colorNA = "gray") +
+  tm_borders() + 
+  tm_compass(type = "4star", 
+             position = c("right", "center"), 
+             size = 6) + 
+  #compase types: arrow, 4star, 8star, radar, rose
   tm_scale_bar(breaks = c(0, 1000, 2000), text.size = 1, position = c("center", "bottom")) + 
   tm_layout(scale = 0.6, #zoom in and out 
-            frame.lwd = 5) + 
+            frame.lwd = 5,
+            "GDP Per Capita in Asia",
+            legend.text.size = 1,
+            legend.title.size = 1.5, 
+            legend.position = c("left", "bottom"),
+            legend.bg.color = "white",
+            legend.frame = "black") + 
+  tmap_options(bg.color = "lightblue1")
 
-tm_shape(china) +
-  tm_fill(col = "red", alpha = 0.3) +
-  tm_borders(lwd = 2)
+tmap_save(filename = "asiamap.jpg", width = 8, height = 5, units = "in", dpi = 300)
 ```
+
 
 ## China inset map ?? 
 ```{r}
