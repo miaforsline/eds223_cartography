@@ -91,12 +91,16 @@ tm_shape(world_asia) +
           title = "GDP Per Capita",
           textNA = "Missing Data",
           colorNA = "gray") +
-  tm_borders() + 
   tm_compass(type = "4star", 
              position = c("right", "center"), 
-             size = 6) + 
-  #compase types: arrow, 4star, 8star, radar, rose
-  tm_scale_bar(breaks = c(0, 1000, 2000), text.size = 1, position = c("center", "bottom")) + 
+             size = 4) + 
+  #compass types: arrow, 4star, 8star, radar, rose
+  tm_scale_bar(breaks = c(0, 1000, 2000), 
+               text.size = 1, 
+               position = c("center", "bottom")) + 
+  tm_text(text = "name_long", 
+          size = 0.5, 
+          col = "black") + 
   tm_layout(scale = 0.6, #zoom in and out 
             frame.lwd = 5,
             "GDP Per Capita in Asia",
@@ -104,7 +108,8 @@ tm_shape(world_asia) +
             legend.title.size = 1.5, 
             legend.position = c("left", "bottom"),
             legend.bg.color = "white",
-            legend.frame = "black") + 
+            legend.frame = "black", 
+            title.size = 1.3) + 
   tmap_options(bg.color = "lightblue1")
 
 tmap_save(filename = "asiamap.jpg", width = 8, height = 5, units = "in", dpi = 300)
