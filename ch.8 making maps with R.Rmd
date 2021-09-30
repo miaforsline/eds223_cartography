@@ -1,5 +1,5 @@
 ---
-title: "cartography"
+title: "ch.8 making maps w/R"
 author: "Mia Forsline"
 date: "9/25/2021"
 output: html_document
@@ -52,6 +52,7 @@ plot(world_asia["gdpPercap"], breaks = "jenks")
 # Graticule
 ```{r}
 plot(world_asia["gdpPercap"], graticule = TRUE, key.pos = NULL, axes = TRUE)
+# standard WGS84 
 ```
 
 
