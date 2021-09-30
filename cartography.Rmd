@@ -85,8 +85,9 @@ tm_shape(world, bbox = bbox_new)+
   tm_fill(col = "white") + 
   tm_borders(lwd = 0.1) + 
 tm_shape(world_asia) +
+  tm_borders(lwd = 0.1) +
   tm_fill(col = "gdpPercap", 
-          palette = "Reds", 
+          palette = "YlOrRd", 
           style = "quantile",
           title = "GDP Per Capita",
           textNA = "Missing Data",
@@ -99,7 +100,7 @@ tm_shape(world_asia) +
                text.size = 1, 
                position = c("center", "bottom")) + 
   tm_text(text = "name_long", 
-          size = 0.5, 
+          size = 0.7, 
           col = "black") + 
   tm_layout(scale = 0.6, #zoom in and out 
             frame.lwd = 5,
