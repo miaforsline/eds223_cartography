@@ -1,0 +1,90 @@
+---
+title: "EDS 223 Assignment 1: Cartography "
+author: "Mia Forsline and Brendan Mcgovern"
+date: "9/25/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(RColorBrewer)
+library(rgeos)
+library(rnaturalearth)
+library(rnaturalearthdata)
+library(sf)
+library(spData)
+library(spDataLarge)
+library(tidyverse)
+library(tmap)
+
+#GwR Ch.8 demo
+library(raster)
+library(dplyr)
+library(leaflet)
+```
+
+```{r}
+#`world` dataset from `spData` 
+world
+world_asia = world[world[["continent"]] == "Asia", ]
+
+plot(world_asia, max.plot = 10) #multi-plot of all attributes
+plot(world_asia["gdpPercap"], 
+     key.pos = 4) #set the color key position (1=below, 2=left, 3=above and 4=right):
+
+plot(world_asia["gdpPercap"], 
+     key.pos = 1, 
+     axes = TRUE, #lat/long tick marks 
+     key.width = lcm(1.3), 
+     key.length = 1.0)
+```
+
+
+## Specify class intervals 
+- what does the distribution of data look like ? 
+```{r}
+plot(world_asia["gdpPercap"], nbreaks = 10)
+#nbreaks specifices # of breaks
+#breaks uses a vector to specify break values or the break style 
+plot(world_asia["gdpPercap"], breaks = "jenks")
+```
+# Graticule
+```{r}
+plot(world_asia["gdpPercap"], graticule = TRUE, key.pos = NULL, axes = TRUE)
+# standard WGS84 
+```
+
+
+```{r}
+tm_shape(world) +
+  tm_fill() +
+  tm_borders()
+```
+
+
+
+```{r}
+vignette('rnaturalearth', package='rnaturalearth')
+vignette('what-is-a-country', package='rnaturalearth')
+```
+
+```{r}
+#world countries from `rnaturalearth` package 
+sp::plot(ne_countries())
+
+#specific country 
+sp::plot(ne_countries(country = 'china'))
+#specific continent
+sp::plot(ne_countries(continent = 'asia'))
+```
+
+```{r}
+china <- ne_countries(country = 'china')
+asia <- ne_countries(continent = 'asia')
+
+tm_shape(china) +
+  tm_fill(china$pop) +
+  tm_borders() 
+```
+

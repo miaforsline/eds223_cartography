@@ -1,7 +1,7 @@
 ---
-title: "ch.8 making maps w/R"
+title: "Ch.8: making maps w/R (tmap tutorial)"
 author: "Mia Forsline"
-date: "9/25/2021"
+date: "9/27/2021"
 output: html_document
 ---
 
@@ -24,67 +24,214 @@ library(dplyr)
 library(leaflet)
 ```
 
+# 8.2.1 tmap basics 
 ```{r}
-#`world` dataset from `spData` 
-world
-world_asia = world[world[["continent"]] == "Asia", ]
-
-plot(world_asia, max.plot = 10) #multi-plot of all attributes
-plot(world_asia["gdpPercap"], 
-     key.pos = 4) #set the color key position (1=below, 2=left, 3=above and 4=right):
-
-plot(world_asia["gdpPercap"], 
-     key.pos = 1, 
-     axes = TRUE, #lat/long tick marks 
-     key.width = lcm(1.3), 
-     key.length = 1.0)
-```
-
-
-## Specify class intervals 
-- what does the distribution of data look like ? 
-```{r}
-plot(world_asia["gdpPercap"], nbreaks = 10)
-#nbreaks specifices # of breaks
-#breaks uses a vector to specify break values or the break style 
-plot(world_asia["gdpPercap"], breaks = "jenks")
-```
-# Graticule
-```{r}
-plot(world_asia["gdpPercap"], graticule = TRUE, key.pos = NULL, axes = TRUE)
-# standard WGS84 
-```
-
-
-```{r}
-tm_shape(world) +
-  tm_fill() +
-  tm_borders()
-```
-
-
-
-```{r}
-vignette('rnaturalearth', package='rnaturalearth')
-vignette('what-is-a-country', package='rnaturalearth')
-```
-
-```{r}
-#world countries from `rnaturalearth` package 
-sp::plot(ne_countries())
-
-#specific country 
-sp::plot(ne_countries(country = 'china'))
-#specific continent
-sp::plot(ne_countries(continent = 'asia'))
-```
-
-```{r}
-china <- ne_countries(country = 'china')
-asia <- ne_countries(continent = 'asia')
-
-tm_shape(china) +
-  tm_fill(china$pop) +
+# Add fill layer to nz shape
+tm_shape(nz) +
+  tm_fill() 
+# Add border layer to nz shape
+tm_shape(nz) +
   tm_borders() 
+# Add fill and border layers to nz shape
+tm_shape(nz) +
+  tm_fill() +
+  tm_borders() 
+```
+
+8.2.2 map objects 
+```{r}
+map_nz <- tm_shape(nz) + tm_polygons()
+class(map_nz)
+```
+
+add a new shape using `tm_shape()`
+```{r}
+map_nz1 = map_nz +
+  tm_shape(nz_elev) + tm_raster(alpha = 0.7)
+map_nz1
+```
+add NZ territorial waters to the existing map object 
+```{r}
+nz_water = st_union(nz) %>% st_buffer(22200) %>% 
+  st_cast(to = "LINESTRING")
+map_nz2 = map_nz1 +
+  tm_shape(nz_water) + tm_lines()
+nz_water
+map_nz2
+```
+
+Add NZ high points 
+```{r}
+map_nz3 = map_nz2 +
+  tm_shape(nz_height) + tm_dots()
+map_nz3
+```
+arrange multiple map objects into a single metaplot 
+```{r}
+tmap_arrange(map_nz1, map_nz2, map_nz3)
+```
+
+# 8.2.3 aesthetics 
+```{r}
+ma1 = tm_shape(nz) + tm_fill(col = "red")
+ma2 = tm_shape(nz) + tm_fill(col = "red", alpha = 0.3)
+ma3 = tm_shape(nz) + tm_borders(col = "blue")
+ma4 = tm_shape(nz) + tm_borders(lwd = 3)
+ma5 = tm_shape(nz) + tm_borders(lty = 2)
+ma6 = tm_shape(nz) + tm_fill(col = "red", alpha = 0.3) +
+  tm_borders(col = "blue", lwd = 3, lty = 2)
+tmap_arrange(ma1, ma2, ma3, ma4, ma5, ma6)
+```
+
+```{r}
+plot(st_geometry(nz), col = nz$Land_area) #base R functions accept nz$Land_area (a numeric vector)
+tm_shape(nz) + tm_fill(col = "Land_area") #tmap aesthetic arguments want a character string 
+```
+
+### set legend title 
+```{r}
+legend_title = expression("Area (km"^2*")")
+map_nza = tm_shape(nz) +
+  tm_fill(col = "Land_area", title = legend_title) + tm_borders()
+map_nza
+```
+
+# 8.2.4 color settings
+- `breaks` allows you to manually set the breaks
+- `n` sets the number of bins into which numeric variables are categorized
+- `palette` defines the color scheme, for example BuGn
+```{r}
+tm_shape(nz) + tm_polygons(col = "Median_income")
+breaks = c(0, 3, 4, 5) * 10000
+tm_shape(nz) + tm_polygons(col = "Median_income", breaks = breaks)
+tm_shape(nz) + tm_polygons(col = "Median_income", n = 10)
+tm_shape(nz) + tm_polygons(col = "Median_income", palette = "BuGn")
+```
+
+### Breaks styles 
+- style = "pretty", the default setting, rounds breaks into whole numbers where possible and spaces them evenly;
+- style = "equal" divides input values into bins of equal range and is appropriate for variables with a uniform distribution (not recommended for variables with a skewed distribution as the resulting map may end-up having little color diversity);
+- style = "quantile" ensures the same number of observations fall into each category (with the potential downside that bin ranges can vary widely);
+- style = "jenks" identifies groups of similar values in the data and maximizes the differences between categories;
+- style = "cont" (and "order") present a large number of colors over continuous color fields and are particularly suited for continuous rasters ("order" can help visualize skewed distributions);
+- style = "cat" was designed to represent categorical values and assures that each category receives a unique color.
+
+`palette` argument expects a vector of colors or a new color palette name, which can be selected interactively with `tmaptools::palette_explorer()`
+
+### Color Palettes:
+1. categorical
+2. sequential (singles such as `Blues` or multi-color such as `YlOrBr`)
+```{r}
+tm_shape(nz) + tm_polygons("Population", palette = "Blues")
+tm_shape(nz) + tm_polygons("Population", palette = "YlOrBr")
+```
+
+3. Diverging = visualize the difference from an important reference point, which can be adjusted using `midpoint` argument 
+
+# 8.2.5 Layouts 
+Include objects to be mapped, title, scale bar, margins, aspect ratios
+```{r}
+map_nz + 
+  tm_compass(type = "8star", position = c("left", "top")) +
+  tm_scale_bar(breaks = c(0, 100, 200), text.size = 1)
+
+map_nz + tm_layout(title = "New Zealand")
+map_nz + tm_layout(scale = 5)
+map_nz + tm_layout(bg.color = "lightblue") #background color 
+map_nz + tm_layout(frame = FALSE) #remove background box outline
+```
+
+### Layout styles 
+```{r}
+map_nza + tm_style("bw")
+map_nza + tm_style("classic")
+map_nza + tm_style("cobalt")
+map_nza + tm_style("col_blind")
+
+#tmap_style_catalogue()
+```
+
+# 8.2.6 Faceted maps 
+```{r}
+urb_1970_2030 = urban_agglomerations %>% 
+  filter(year %in% c(1970, 1990, 2010, 2030))
+
+tm_shape(world) +
+  tm_polygons() +
+  tm_shape(urb_1970_2030) +
+  tm_symbols(col = "black", border.col = "white", size = "population_millions") +
+  tm_facets(by = "year", nrow = 2, ncol = 2, free.coords = FALSE)
+#free.coords = each map has its own bounding box 
+```
+
+# 8.2.7 Inset maps 
+```{r}
+#define the area of interest 
+nz_region = st_bbox(c(xmin = 1340000, xmax = 1450000,
+                      ymin = 5130000, ymax = 5210000),
+                    crs = st_crs(nz_height)) %>% 
+                    st_as_sfc()
+
+#create the map 
+nz_height_map = tm_shape(nz_elev, bbox = nz_region) +
+  tm_raster(style = "cont", palette = "YlGn", legend.show = TRUE) +
+  tm_shape(nz_height) + tm_symbols(shape = 2, col = "red", size = 1) +
+  tm_scale_bar(position = c("left", "bottom"))
+nz_height_map
+
+#create the inset map 
+nz_map = tm_shape(nz) + tm_polygons() +
+  tm_shape(nz_height) + tm_symbols(shape = 2, col = "red", size = 0.1) + 
+  tm_shape(nz_region) + tm_borders(lwd = 3) 
+nz_map 
+
+#arrange inset map onto main map 
+library(grid)
+nz_height_map
+print(nz_map, vp = viewport(0.8, 0.27, width = 0.5, height = 0.5))
+```
+
+### map of the contiguous US
+```{r}
+us_states_map = tm_shape(us_states, projection = 2163) + tm_polygons() + 
+  tm_layout(frame = FALSE)
+us_states_map
+```
+
+### Hawaii + Alaska Maps 
+```{r}
+hawaii_map = tm_shape(hawaii) + tm_polygons() + 
+  tm_layout(title = "Hawaii", frame = FALSE, bg.color = NA, 
+            title.position = c("LEFT", "BOTTOM"))
+alaska_map = tm_shape(alaska) + tm_polygons() + 
+  tm_layout(title = "Alaska", frame = FALSE, bg.color = NA)
+hawaii_map
+alaska_map
+```
+### Arrange all 3 maps 
+```{r}
+us_states_map
+print(hawaii_map, vp = grid::viewport(0.35, 0.1, width = 0.2, height = 0.1))
+print(alaska_map, vp = grid::viewport(0.15, 0.15, width = 0.3, height = 0.3))
+```
+
+# 8.3 Animated maps 
+```{r}
+#create the frames 
+#note: along = "year" rather than by = "year"
+urb_anim = tm_shape(world) + tm_polygons() + 
+  tm_shape(urban_agglomerations) + tm_dots(size = "population_millions") +
+  tm_facets(along = "year", free.coords = FALSE)
+urb_anim
+```
+
+```{r}
+#create and save the gif file 
+tmap_animation(urb_anim, filename = "urb_anim.gif", delay = 25)
+```
+
+# 8.4 Interactive Maps 
+```{r}
+
 ```
 
