@@ -9,6 +9,8 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 
 library(RColorBrewer)
+#display.brewer.all(colorblindFriendly = T)
+
 library(rgeos)
 library(rnaturalearth)
 library(rnaturalearthdata)
@@ -17,18 +19,19 @@ library(spData)
 library(spDataLarge)
 library(tidyverse)
 library(tmap)
-
-#GwR Ch.8 demo
-library(raster)
 library(dplyr)
-library(leaflet)
 ```
 
+# data from `spData`
 ```{r}
-#`world` dataset from `spData` 
 world
-world_asia = world[world[["continent"]] == "Asia", ]
+world_asia <- world[world[["continent"]] == "Asia", ]
+china <- world[world[["name_long"]] == "China", ]
+```
 
+
+# Exploratory plots using base `plot` 
+```{r}
 plot(world_asia, max.plot = 10) #multi-plot of all attributes
 plot(world_asia["gdpPercap"], 
      key.pos = 4) #set the color key position (1=below, 2=left, 3=above and 4=right):
@@ -39,7 +42,6 @@ plot(world_asia["gdpPercap"],
      key.width = lcm(1.3), 
      key.length = 1.0)
 ```
-
 
 ## Specify class intervals 
 - what does the distribution of data look like ? 
@@ -55,13 +57,53 @@ plot(world_asia["gdpPercap"], graticule = TRUE, key.pos = NULL, axes = TRUE)
 # standard WGS84 
 ```
 
-
+# `tmap` 
 ```{r}
+
+china
+
 tm_shape(world) +
   tm_fill() +
   tm_borders()
+
+tm_shape(world_asia) +
+  tm_fill(col = "gdpPercap", palette = "Reds", style = "quantile") +
+  tm_borders() + 
+  tm_compass(type = "8star", position = c("left", "top")) + 
+  tm_scale_bar(breaks = c(0, 1000, 2000), text.size = 1, position = c("center", "bottom")) + 
+  tm_layout(scale = 0.6) #zoom in and out 
+
+tm_shape(china) +
+  tm_fill(col = "red", alpha = 0.3) +
+  tm_borders(lwd = 2)
 ```
 
+## China inset map ?? 
+```{r}
+china
+
+china_inset = st_bbox(c(xmin = 73.67538, xmax = 135.0263,
+                      ymin = 18.1977 , ymax = 53.4588),
+                      crs = st_crs(china$pop)) %>% 
+                      st_as_sfc() 
+china_inset
+
+asia_map = tm_shape(world_asia) + 
+  tm_polygons()+
+  tm_scale_bar(position = c("left", "bottom"))
+asia_map
+
+asia_inset = tm_shape(world_asia) +  tm_polygons() +
+  tm_shape(china_inset) + 
+  tm_borders(lwd = 1) 
+asia_inset
+
+library(grid)
+asia_map
+print(asia_inset, vp = viewport(1, 0.3, width = 0.5, height = 0.5))
+
+#tmap_save()
+```
 
 
 ```{r}
@@ -69,6 +111,7 @@ vignette('rnaturalearth', package='rnaturalearth')
 vignette('what-is-a-country', package='rnaturalearth')
 ```
 
+# `rnaturalearth` package 
 ```{r}
 #world countries from `rnaturalearth` package 
 sp::plot(ne_countries())
@@ -82,9 +125,5 @@ sp::plot(ne_countries(continent = 'asia'))
 ```{r}
 china <- ne_countries(country = 'china')
 asia <- ne_countries(continent = 'asia')
-
-tm_shape(china) +
-  tm_fill(china$pop) +
-  tm_borders() 
 ```
 
