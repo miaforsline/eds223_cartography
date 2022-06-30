@@ -1,4 +1,4 @@
-# EDS 223: Spatial Analysis for Environmental Data Science - Cartography 
+# EDS 223: Spatial Analysis for Environmental Data Science - Cartography (Fall Quarter 2021)
 ### Student author: Mia Forsline
 ### Course instructor: Dr. James Frew
 ### [Course website](https://jamesfrew.github.io/EDS_223_spatial_analysis/)
